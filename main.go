@@ -489,6 +489,16 @@ func MerchantMenu(c *Character) {
 	}
 }
 
+func InnMenu(c *Character) {
+        const cost = 10
+        if !SpendGold(c, cost) {
+                return
+        }
+        c.CurrentHP = c.MaxHP
+        c.Mana = c.MaxMana
+        fmt.Println("Vous vous reposez à l'auberge. PV et Mana restaurés.")
+}
+
 func GainXP(c *Character, amount int) {
 	c.XP += amount
 	fmt.Printf("Vous gagnez %d XP.\n", amount)
@@ -514,8 +524,10 @@ func main() {
 		fmt.Println("2) Inventaire")
 		fmt.Println("3) Marchand")
 		fmt.Println("4) Forgeron")
-		fmt.Println("5) Entraînement (combat gobelin)")
-		fmt.Println("0) Quitter")
+                fmt.Println("5) Entraînement (combat gobelin)")
+                fmt.Println("6) Auberge")
+                fmt.Println("7) Interface graphique")
+                fmt.Println("0) Quitter")
 		choice, _ := reader.ReadString('\n')
 		choice = strings.TrimSpace(choice)
 		switch choice {
@@ -527,11 +539,15 @@ func main() {
 			MerchantMenu(&c)
 		case "4":
 			BlacksmithMenu(&c)
-		case "5":
-			Battle(&c)
-		case "0":
-			fmt.Println("Au revoir!")
-			return
+                case "5":
+                        Battle(&c)
+                case "6":
+                        InnMenu(&c)
+                case "7":
+                        LaunchGUI()
+                case "0":
+                        fmt.Println("Au revoir!")
+                        return
 		default:
 			fmt.Println("Choix invalide.")
 		}
