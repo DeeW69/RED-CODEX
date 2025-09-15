@@ -268,6 +268,54 @@ func AccessInventory(c *Character, m *Monster, reader *bufio.Reader) {
 	}
 }
 
+func DrinkPotionInBattle(c *Character, reader *bufio.Reader) {
+	indices := []int{}
+	for i, item := range c.Inventory {
+		if item == "Potion de vie" || item == "Potion de mana" {
+			indices = append(indices, i)
+		}
+	}
+	if len(indices) == 0 {
+		fmt.Println("Vous n'avez pas de potion.")
+		return
+	}
+	fmt.Println("Choisissez une potion:")
+	for i, idx := range indices {
+		fmt.Printf("%d) %s\n", i+1, c.Inventory[idx])
+	}
+	fmt.Println("0) Annuler")
+	input, _ := reader.ReadString('\n')
+	input = strings.TrimSpace(input)
+	if input == "0" {
+		return
+	}
+	choice, err := strconv.Atoi(input)
+	if err != nil || choice < 1 || choice > len(indices) {
+		fmt.Println("Choix invalide.")
+		return
+	}
+	invIdx := indices[choice-1]
+	item := c.Inventory[invIdx]
+	switch item {
+	case "Potion de vie":
+		c.TakePotion()
+	case "Potion de mana":
+		c.TakeManaPotion()
+	}
+	c.RemoveInventory(invIdx)
+}
+
+func GenerateLoot() []string {
+	lootTable := []string{"Matériaux", "Potion de vie", "Potion de mana", "Peau de gobelin"}
+	n := rand.Intn(2) + 1
+	loot := make([]string, 0, n)
+	for i := 0; i < n; i++ {
+		item := lootTable[rand.Intn(len(lootTable))]
+		loot = append(loot, item)
+	}
+	return loot
+}
+
 func PlayerAttackMenu(c *Character, m *Monster, reader *bufio.Reader) {
 	for {
 		fmt.Println("Choisissez votre attaque:")
@@ -316,15 +364,17 @@ func Battle(c *Character) {
 	for {
 		fmt.Printf("\n%s PV:%d/%d Mana:%d/%d\n", c.Name, c.CurrentHP, c.MaxHP, c.Mana, c.MaxMana)
 		fmt.Printf("%s PV:%d/%d\n", g.Name, g.CurrentHP, g.MaxHP)
-		fmt.Println("1) Attaquer 2) Utiliser Inventaire 3) Quitter")
+		fmt.Println("1) Attaquer 2) Boire potion 3) Utiliser Inventaire 4) Quitter")
 		choice, _ := reader.ReadString('\n')
 		choice = strings.TrimSpace(choice)
 		switch choice {
 		case "1":
 			PlayerAttackMenu(c, &g, reader)
 		case "2":
-			AccessInventory(c, &g, reader)
+			DrinkPotionInBattle(c, reader)
 		case "3":
+			AccessInventory(c, &g, reader)
+		case "4":
 			fmt.Println("Vous fuyez le combat.")
 			return
 		default:
@@ -335,6 +385,11 @@ func Battle(c *Character) {
 			fmt.Println("Le gobelin est vaincu!")
 			c.Gold += 10
 			GainXP(c, 50)
+			loot := GenerateLoot()
+			fmt.Println("Butin obtenu:")
+			for _, item := range loot {
+				c.AddInventory(item)
+			}
 			return
 		}
 		dmg := g.GoblinPattern()
@@ -351,20 +406,20 @@ func Battle(c *Character) {
 	}
 }
 
-func CountMaterials(c *Character) int {
+func CountItem(c *Character, item string) int {
 	count := 0
-	for _, item := range c.Inventory {
-		if item == "Matériaux" {
+	for _, it := range c.Inventory {
+		if it == item {
 			count++
 		}
 	}
 	return count
 }
 
-func RemoveMaterials(c *Character, n int) {
+func RemoveItem(c *Character, item string, n int) {
 	removed := 0
 	for i := 0; i < len(c.Inventory) && removed < n; {
-		if c.Inventory[i] == "Matériaux" {
+		if c.Inventory[i] == item {
 			c.Inventory = append(c.Inventory[:i], c.Inventory[i+1:]...)
 			removed++
 		} else {
@@ -378,10 +433,12 @@ func BlacksmithMenu(c *Character) {
 	for {
 		fmt.Println("\n--- Forgeron ---")
 		fmt.Printf("Or: %d\n", c.Gold)
-		fmt.Println("Matériaux:", CountMaterials(c))
+		fmt.Println("Matériaux:", CountItem(c, "Matériaux"))
+		fmt.Println("Peau de gobelin:", CountItem(c, "Peau de gobelin"))
 		fmt.Println("1) Chapeau de l’aventurier (+10 PV max)")
 		fmt.Println("2) Tunique de l’aventurier (+25 PV max)")
 		fmt.Println("3) Bottes de l’aventurier (+15 PV max)")
+		fmt.Println("4) Armure en peau de gobelin (+20 PV max)")
 		fmt.Println("0) Retour")
 		choice, _ := reader.ReadString('\n')
 		choice = strings.TrimSpace(choice)
@@ -401,20 +458,34 @@ func BlacksmithMenu(c *Character) {
 			bonus = 15
 			slot = "Feet"
 			name = "Bottes de l’aventurier"
+		case "4":
+			if CountItem(c, "Peau de gobelin") < 3 {
+				fmt.Println("Pas assez de Peau de gobelin.")
+				continue
+			}
+			if !SpendGold(c, 5) {
+				continue
+			}
+			RemoveItem(c, "Peau de gobelin", 3)
+			c.Equipment.Chest = "Armure en peau de gobelin"
+			c.MaxHP += 20
+			c.CurrentHP += 20
+			fmt.Println("Armure en peau de gobelin fabriquée et équipée! PV max +20")
+			continue
 		case "0":
 			return
 		default:
 			fmt.Println("Choix invalide.")
 			continue
 		}
-		if CountMaterials(c) < 2 {
+		if CountItem(c, "Matériaux") < 2 {
 			fmt.Println("Pas assez de matériaux.")
 			continue
 		}
 		if !SpendGold(c, 5) {
 			continue
 		}
-		RemoveMaterials(c, 2)
+		RemoveItem(c, "Matériaux", 2)
 		switch slot {
 		case "Head":
 			c.Equipment.Head = name
@@ -490,13 +561,13 @@ func MerchantMenu(c *Character) {
 }
 
 func InnMenu(c *Character) {
-        const cost = 10
-        if !SpendGold(c, cost) {
-                return
-        }
-        c.CurrentHP = c.MaxHP
-        c.Mana = c.MaxMana
-        fmt.Println("Vous vous reposez à l'auberge. PV et Mana restaurés.")
+	const cost = 10
+	if !SpendGold(c, cost) {
+		return
+	}
+	c.CurrentHP = c.MaxHP
+	c.Mana = c.MaxMana
+	fmt.Println("Vous vous reposez à l'auberge. PV et Mana restaurés.")
 }
 
 func GainXP(c *Character, amount int) {
@@ -524,10 +595,10 @@ func main() {
 		fmt.Println("2) Inventaire")
 		fmt.Println("3) Marchand")
 		fmt.Println("4) Forgeron")
-                fmt.Println("5) Entraînement (combat gobelin)")
-                fmt.Println("6) Auberge")
-                fmt.Println("7) Interface graphique")
-                fmt.Println("0) Quitter")
+		fmt.Println("5) Entraînement (combat gobelin)")
+		fmt.Println("6) Auberge")
+		fmt.Println("7) Interface graphique")
+		fmt.Println("0) Quitter")
 		choice, _ := reader.ReadString('\n')
 		choice = strings.TrimSpace(choice)
 		switch choice {
@@ -539,15 +610,15 @@ func main() {
 			MerchantMenu(&c)
 		case "4":
 			BlacksmithMenu(&c)
-                case "5":
-                        Battle(&c)
-                case "6":
-                        InnMenu(&c)
-                case "7":
-                        LaunchGUI()
-                case "0":
-                        fmt.Println("Au revoir!")
-                        return
+		case "5":
+			Battle(&c)
+		case "6":
+			InnMenu(&c)
+		case "7":
+			LaunchGUI()
+		case "0":
+			fmt.Println("Au revoir!")
+			return
 		default:
 			fmt.Println("Choix invalide.")
 		}
