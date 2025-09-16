@@ -1,0 +1,48 @@
+{
+  "potions": {
+    "gold": {
+      "icon": "🥃​",
+      "name": "Potion d'Or",
+      "description": "Augmente temporairement la quantité d'or trouvé",
+      "value": 50,
+      "duration": 300,
+      "effect": "gold_multiplier",
+      "multiplier": 1.5
+    },
+    "exp": {
+      "icon": "☕​",
+      "name": "Potion d'Expérience",
+      "description": "Augmente le gain d'expérience",
+      "value": 75,
+      "duration": 600,
+      "effect": "exp_boost",
+      "boost": 30
+    },
+    "mana": {      
+      "icon": "🍷​",
+      "name": "Potion de Mana",
+      "description": "Restaure les points de mana",
+      "value": 25,
+      "restore_amount": 50,
+      "effect": "mana_restore"
+    },
+    "poison": {
+      "icon": "🧪",
+      "name": "Potion de Poison",
+      "description": "Inflige des dégâts de poison à l'ennemi",
+      "value": 40,
+      "damage": 20,
+      "duration": 60,
+      "effect": "poison_damage",
+      "damage_per_second": 5
+    },
+    "soin": {
+      "icon": "🥛​",
+      "name": "Potion de Soin",
+      "description": "Restaure les points de vie",
+      "value": 30,
+      "restore_amount": 100,
+      "effect": "health_restore"
+    }
+  }
+}

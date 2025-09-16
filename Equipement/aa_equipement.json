@@ -1,0 +1,209 @@
+{
+	"armes": {
+		"humain": {
+			"baton": {
+				"nom": "Bâton",
+				"classe": "Humain",
+				"type": "Magique",
+				"rarete": "GrisClair",
+				"degats": 5,
+				"mana": 2,
+				"pv": 0,
+				"vitesse": 0,
+				"armure": 1,
+				"magic_resist": 1,
+				"description": "Un bâton simple, utile pour les attaques de base."
+			},
+			"hache": {
+				"nom": "Hache",
+				"classe": "Humain",
+				"type": "Physique",
+				"rarete": "GrisClair",
+				"degats": 8,
+				"mana": 1,
+				"pv": 5,
+				"vitesse": 1,
+				"armure": 2,
+				"magic_resist": 0,
+				"description": "Une hache robuste, elle est idéale pour les combats rapprocher."
+			},
+			"epee": {
+				"nom": "Epée",
+				"classe": "Humain",
+				"type": "Mixte",
+				"rarete": "GrisClair",
+				"degats": 6,
+				"mana": 2,
+				"pv": 3,
+				"vitesse": 2,
+				"armure": 1,
+				"magic_resist": 1,
+				"description": "Une épée équilibrée, adaptée à plusieurs styles de combats."
+			}
+		},
+		"magicien": {
+			"baguette": {
+				"nom": "Baguette",
+				"classe": "Magicien",
+				"type": "Magique",
+				"rarete": "GrisClair",
+				"degats": 6,
+				"mana": 3,
+				"pv": 0,
+				"vitesse": 1,
+				"armure": 0,
+				"magic_resist": 2,
+				"description": "Canalise les sorts simples avec précision."
+			},
+			"baton_de_magicien": {
+				"nom": "Bâton de Mage",
+				"classe": "Magicien",
+				"type": "Magique",
+				"rarete": "GrisClair",
+				"degats": 10,
+				"mana": 5,
+				"pv": 2,
+				"vitesse": 0,
+				"armure": 1,
+				"magic_resist": 3,
+				"description": "Un bâton puissant pour les mages expérimentés."
+			},
+			"sceptre": {
+				"nom": "Sceptre",
+				"classe": "Magicien",
+				"type": "Magique",
+				"rarete": "GrisClair",
+				"degats": 15,
+				"mana": 8,
+				"pv": 3,
+				"vitesse": 1,
+				"armure": 2,
+				"magic_resist": 4,
+				"description": "Un sceptre royal imprégné de magie ancienne."
+			}
+		},
+		"troll": {
+			"gant": {
+				"nom": "Gant",
+				"classe": "Troll",
+				"type": "Physique",
+				"rarete": "GrisClair",
+				"degats": 10,
+				"mana": 0,
+				"pv": 5,
+				"vitesse": 2,
+				"armure": 2,
+				"magic_resist": 0,
+				"description": "Des gants massifs pour frapper fort."
+			},
+			"masse": {
+				"nom": "Masse",
+				"classe": "Troll",
+				"type": "Physique",
+				"rarete": "GrisClair",
+				"degats": 15,
+				"mana": 0,
+				"pv": 8,
+				"vitesse": 0,
+				"armure": 3,
+				"magic_resist": 0,
+				"description": "Une Masse lourde qui écrase tout sur son passage."
+			},
+			"poele": {
+				"nom": "Poêle",
+				"classe": "Troll",
+				"type": "Physique",
+				"rarete": "GrisClair",
+				"degats": 12,
+				"mana": 0,
+				"pv": 6,
+				"vitesse": 1,
+				"armure": 4,
+				"magic_resist": 0,
+				"description": "Une poêle en fonte... redoutable et surprenante."
+			}
+		},
+		"grimline": {
+			"biere": {
+				"nom": "Bière",
+				"classe": "Grimline",
+				"type": "Mixte",
+				"rarete": "GrisClair",
+				"degats": 5,
+				"mana": 1,
+				"pv": 2,
+				"vitesse": 1,
+				"armure": 0,
+				"magic_resist": 0,
+				"description": "A consommer avec modération."
+			},
+			"canard en plastique jaune fluo": {
+				"nom": "Canard en plastique jaune fluo",
+				"classe": "Grimline",
+				"type": "Magique",
+				"rarete": "GrisClair",
+				"degats": 8,
+				"mana": 2,
+				"pv": 0,
+				"vitesse": 2,
+				"armure": 0,
+				"magic_resist": 1,
+				"description": "Effraie les ennemis par sa seule présence."
+			},
+			"tronconneuse": {
+				"nom": "Tronçonneuse",
+				"classe": "Grimline",
+				"type": "Physique",
+				"rarete": "GrisClair",
+				"degats": 15,
+				"mana": 0,
+				"pv": 3,
+				"vitesse": 3,
+				"armure": 1,
+				"magic_resist": 0,
+				"description": "Dégats de zone et bonus de vitesse, surtout le jour."
+			}
+		},
+		"elfe": {
+			"fonde": {
+				"nom": "Fonde",
+				"classe": "Elfe",
+				"type": "Physique",
+				"rarete": "GrisClair",
+				"degats": 6,
+				"mana": 0,
+				"pv": 1,
+				"vitesse": 3,
+				"armure": 0,
+				"magic_resist": 1,
+				"description": "Petite mais rapide, parfaite pour les attaques à distance."
+			},
+			"arc": {
+				"nom": "Arc",
+				"classe": "Elfe",
+				"type": "Physique",
+				"rarete": "Bleu",
+				"degats": 10,
+				"mana": 0,
+				"pv": 2,
+				"vitesse": 2,
+				"armure": 1,
+				"magic_resist": 2,
+				"description": "Un arc élégant, précis et mortel."
+			},
+			"arbalette": {
+				"nom": "Arbalette",
+				"classe": "Elfe",
+				"type": "Physique",
+				"rarete": "GrisClair",
+				"degats": 12,
+				"mana": 0,
+				"pv": 3,
+				"vitesse": 1,
+				"armure": 2,
+				"magic_resist": 3,
+				"description": "Puissante et stable, idéale pour les tires lourds."
+			}
+		}
+	}
+}

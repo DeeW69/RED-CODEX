@@ -1,0 +1,55 @@
+{
+  "forge_items": {
+    "sword_upgrade": {
+      "name": "Amélioration d'Épée +1",
+      "description": "Augmente les dégâts de votre épée",
+      "price": 50,
+      "type": "weapon",
+      "bonus": 5
+    },
+    "armor_upgrade": {
+      "name": "Amélioration d'Armure +1",
+      "description": "Augmente votre défense",
+      "price": 75,
+      "type": "armor",
+      "bonus": 3
+    },
+    "shield_upgrade": {
+      "name": "Amélioration de Bouclier +1",
+      "description": "Augmente votre protection",
+      "price": 40,
+      "type": "shield",
+      "bonus": 2
+    }
+  },
+  "shop_items": {
+    "health_potion": {
+      "name": "Potion de Soin",
+      "description": "Restaure 50 points de vie",
+      "price": 30,
+      "type": "consumable",
+      "effect": "heal_50"
+    },
+    "mana_potion": {
+      "name": "Potion de Mana",
+      "description": "Restaure 30 points de mana",
+      "price": 25,
+      "type": "consumable",
+      "effect": "mana_30"
+    },
+    "exp_potion": {
+      "name": "Potion d'Expérience",
+      "description": "Donne 100 points d'expérience",
+      "price": 75,
+      "type": "consumable",
+      "effect": "exp_100"
+    },
+    "poison_potion": {
+      "name": "Potion de Poison",
+      "description": "Inflige 20 dégâts de poison",
+      "price": 40,
+      "type": "consumable",
+      "effect": "poison_20"
+    }
+  }
+}

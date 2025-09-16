@@ -1,0 +1,202 @@
+{
+    "classes": {
+        "humain": {
+            "name": "Humain",
+            "description": "Les humains sont une espèce polyvalente",
+            "attributes": {
+                "pv": 90,
+                "mana": 70,
+                "force": 70,
+                "magic": 50,
+                "armure": 60,
+                "magic_resist": 45,
+                "vitesse": 50
+            },
+            "abilities": [
+                {
+                    "name": "coup droit",
+                    "description": "permet d'infliger des dégats direct",
+                    "damage": 40
+                },
+                {
+                    "name": "frappe de nen",
+                    "description": "frappe rapide mais modérée",
+                    "damage": 60,
+                    "mana_cost": 30
+                },
+                {
+                    "name": "coup de pied sauté",
+                    "description": "coup de pied sauté puissant",
+                    "damage": 50,
+                    "mana_cost": 20
+                },
+                {
+                    "name": "tank",
+                    "description": "augmente l'armure",
+                    "armor_boost": 1.5,
+                    "comment": "multiplie de 1.5 l'armure actuelle",
+                    "force_boost": 1.5,
+                    "comment": "multiplie de 1.5 la force actuelle"
+                }
+            ]
+        },
+        "magicien": {
+            "name": "Magicien",
+            "description": "Un role classique dans tout les jeux hein",
+            "attributes": {
+                "pv": 60,
+                "mana": 120,
+                "force": 35,
+                "magic": 90,
+                "armure": 40,
+                "magic_resist": 35,
+                "vitesse": 55
+            },
+            "abilities": [
+                {
+                    "name": "coup de baton",
+                    "description": "une attaque pas tres puissante",
+                    "damage": 35
+                },
+                {
+                    "name": "bollos de fuego",
+                    "description": "une boule de feu qui ravage tout sur son passage",
+                    "magic_damage": 45,
+                    "mana_cost": 15
+                },
+                {
+                    "name": "kaméhameha",
+                    "description": "laser surpuissant, c'est tout!",
+                    "magic_damage": 60,
+                    "mana_cost": 35
+                },
+                {
+                    "name": "echauffement",
+                    "description": "augmente la puissance magique",
+                    "magic_boost": "*1.75"
+                }
+            ]
+        },
+        "troll": {
+            "name": "Troll",
+            "description": "Ce sont des trolls",
+            "attributes": {
+                "pv": 140,
+                "mana": 50,
+                "force": 60,
+                "magic": 30,
+                "armure": 80,
+                "magic_resist": 65,
+                "vitesse": 30
+            },
+            "abilities": [
+                {
+                    "name": "Force Brute",
+                    "description": "inflige des dégâts physiques importants",
+                    "damage": 40
+                },
+                {
+                    "name": "Régénération",
+                    "description": "régénère une partie des points de vie",
+                    "heal": 46,
+                    "comment": "régénère 1/3 de ses pv max"
+                },
+                
+                {
+                    "name": "Cri de Guerre",
+                    "description": "augmente la force et l'armure temporairement",
+                    "magic_resist_boost": 1.4,
+                    "comment": "multiplie de 1.4 la résistance magique actuelle",
+                    "armor_boost": 1.4,
+                    "comment": "multiplie de 1.4 l'armure actuelle"
+                },
+                {
+                    "name": "Lance Pierre",
+                    "description": "attaque à distance modérée",
+                    "damage": 20,
+                    "magic_damage": 20,
+                    "mana_cost": 20
+                }
+            ]
+        },
+        "grimline": {
+            "name": "Grimline",
+            "description": "Des creatures mignonnes le jour mais terrifiantes la nuit",
+            "attributes": {
+                "pv": 65,
+                "mana": 60,
+                "force": 75,
+                "magic": 40,
+                "armure": 50,
+                "magic_resist": 55,
+                "vitesse": 70
+            },
+            "abilities": [
+                {
+                    "name": "shadow sneak",
+                    "description": "une attaque utilisable seulement la nuit",
+                    "damage": 100,
+                    "comment": "utilisable une fois par nuit et pas contre les boss"
+                },
+                {
+                    "name": "finish him",
+                    "description": "inflige des dégâts massifs à une cible affaiblie",
+                    "damage": 70,
+                    "comment": "damage == quand la cible est en dessous de 50% de ses pv max",
+                    "mana_cost": 20
+                },
+                {
+                    "name": "assassinat",
+                    "description": "comme son nom l'indique ...",
+                    "damage": 60,
+                    "mana_cost": 35
+                },
+                {
+                    "name": "surprise",
+                    "description": "attaque rapide",
+                    "damage": 40
+                }
+            ]
+        },
+        "elfe": {
+            "name": "Elfe",
+            "description": "Vous avez tous vu le seigneur des anneaux ? bon bah c'est ca. Sinon revoyer vos priorités dans la vie bande de moldus",
+            "attributes": {
+                "pv": 75,
+                "mana": 75,
+                "force": 45,
+                "magic": 65,
+                "armure": 55,
+                "magic_resist": 50,
+                "vitesse": 60
+            },
+            "abilities": [
+                {
+                    "name": "salve de flèches",
+                    "description": "pour les puants qui auront la ref",
+                    "magic_damage": 30
+                },
+                {
+                    "name": "headshot",
+                    "description": "un tir aussi precis que puissant",
+                    "damage": 65,
+                    "mana_cost": 30
+                },
+                {
+                    "name": "polyvalence",
+                    "description": "augmente toute les stats",
+                    "all_attributes_boost": 1.15,
+                    "comment": "multiplie de 1.15 toutes les stats actuelles sauf mana et pv"
+                },
+                {
+                    "name": "fleche explosive",
+                    "description": "une attaque si puissante qu'elle blesse aussi l'elfe",
+                    "damage": 60,
+                    "magic_damage": 60,
+                    "self_damage": 20,
+                    "comment": "l'elfe perd 20% de ses pv max"
+                }
+            ]
+        }
+    }
+}

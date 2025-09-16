@@ -1,0 +1,93 @@
+{
+  "player": {
+    "stats": {
+      "name": "H\u00e9ros",
+      "level": 23,
+      "experience": 5400,
+      "gold": 0,
+      "health": 16,
+      "max_health": 200,
+      "mana": 80,
+      "max_mana": 100,
+      "spells": [
+        "Boule de feu"
+      ]
+    },
+    "equipment": {
+      "head": {
+        "name": "Casque",
+        "level_star": 9
+      },
+      "weapon": {
+        "name": "Dague",
+        "level_star": 7
+      },
+      "armor": {
+        "name": "Cuir",
+        "level_star": 15
+      }
+    },
+    "inventory": {
+      "potions": [
+        {
+          "id": "health_potion",
+          "icon": "\ud83c\udf77",
+          "effect": "HP",
+          "quantity": 1
+        },
+        {
+          "id": "mana_potion",
+          "icon": "\ud83d\udd2e",
+          "effect": "MP",
+          "quantity": 3
+        },
+        {
+          "id": "exp_potion",
+          "icon": "\ud83d\udcd8",
+          "effect": "OR",
+          "quantity": 0
+        },
+        {
+          "id": "poison_potion",
+          "icon": "\u2620\ufe0f",
+          "effect": "PS",
+          "quantity": 4
+        },
+        {
+          "id": "money_potion",
+          "icon": "\ud83d\udcb0",
+          "effect": "MA",
+          "quantity": 0
+        }
+      ],
+      "weapons": [
+        {
+          "id": "dagger_anojeva",
+          "icon": "\u2694",
+          "stats": {
+            "agility": 45,
+            "chance": 15
+          },
+          "level": 23,
+          "level_star": 17,
+          "quantity": 1
+        }
+      ],
+      "drops": {
+        "carapace": 10,
+        "crocs": 11,
+        "peau": 7,
+        "venin": 10,
+        "viande": 8
+      },
+      "gold": 39
+    },
+    "companions": {
+      "gobelin": {
+        "name": "Gobelin",
+        "attack": 2,
+        "unlocked": true
+      }
+    }
+  }
+}
