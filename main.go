@@ -6,85 +6,101 @@ import (
 	"bufio"
 	"fmt"
 	"os"
-	"os/exec"
+	"strconv"
 	"strings"
 	"time"
 )
 
-// ==================== MENU HANDLER ====================
+const saveFilePath = "data_players.json"
 
-func handleMenuChoice(choice string) {
-	// Nettoyer l'input (enlever les espaces et retours à la ligne)
+type ConsoleGame struct {
+	session *game.Session
+	reader  *bufio.Reader
+}
+
+func NewConsoleGame(session *game.Session) *ConsoleGame {
+	return &ConsoleGame{
+		session: session,
+		reader:  bufio.NewReader(os.Stdin),
+	}
+}
+
+func (g *ConsoleGame) Run() {
+	ui.AnimatedWelcome()
+	time.Sleep(1 * time.Second)
+	ui.DisplayWelcomeArt()
+	time.Sleep(1 * time.Second)
+
+	for {
+		ui.DisplayMainMenu()
+		if err := g.waitForMenuInput(); err != nil {
+			fmt.Println("\033[1;31mErreur de lecture :\033[0m", err)
+			return
+		}
+	}
+}
+
+func (g *ConsoleGame) waitForMenuInput() error {
+	input, err := g.reader.ReadString('\n')
+	if err != nil {
+		return err
+	}
+	g.handleMenuChoice(input)
+	return nil
+}
+
+func (g *ConsoleGame) handleMenuChoice(choice string) {
 	cleanedInput := strings.TrimSpace(choice)
 
 	switch cleanedInput {
 	case "1":
 		fmt.Println("\n\033[1;32m✓ Chargement du jeu...\033[0m")
-		startNewGame()
-
+		g.startNewGame()
 	case "2":
 		fmt.Println("\n\033[1;33m🔍 Recherche des sauvegardes...\033[0m")
-		loadGame()
-
+		g.loadGame()
 	case "3":
 		fmt.Println("\n\033[1;36m⚙️  Entrée dans les options...\033[0m")
-		showOptions()
-
+		g.showOptions()
 	case "4":
 		fmt.Println("\n\033[1;31m❌ Vous quittez le jeu ? (OUI/NON)\033[0m")
-		confirmQuit()
-
+		g.confirmQuit()
 	case "5":
 		fmt.Println("\n\033[1;36m🎒 Ouverture de l'inventaire...\033[0m")
-		showInventory()
-
+		g.showInventory(true)
 	default:
 		fmt.Printf("\n\033[1;31m✗ Choix invalide: '%s'. Veuillez choisir 1-5.\033[0m\n", cleanedInput)
 		time.Sleep(2 * time.Second)
-		// Re-afficher le menu
-		ui.DisplayMainMenu()
-		waitForMenuInput()
 	}
 }
 
-func waitForMenuInput() {
-	reader := bufio.NewReader(os.Stdin)
-	input, _ := reader.ReadString('\n')
-	handleMenuChoice(input)
-}
+func (g *ConsoleGame) startNewGame() {
+	if err := g.session.Reload(); err != nil {
+		fmt.Println("\033[1;31m✗ Impossible de charger la sauvegarde :\033[0m", err)
+		return
+	}
+	g.session.ResetForNewGame()
+	_ = g.session.Save()
 
-// ==================== GAME HANDLERS ====================
-
-func startNewGame() {
-	fmt.Println("\n\033[1;32m✓ Chargement du jeu...\033[0m")
-	time.Sleep(1 * time.Second)
-	//intro avant le chateau
 	ui.ShowIntro()
-	// Animation d'entrée dans le château
 	ui.StartCastleAnimation()
 
 	fmt.Println("\033[1;32m🎮 Nouvelle partie lancée !\033[0m")
-
-	// On démarre la boucle de jeu (sans retourner au menu)
-	gameLoop()
+	g.gameLoop()
 }
 
-func loadGame() {
-	// Simulation de recherche
-	fmt.Print("\033[1;33m")
-	for i := 0; i < 3; i++ {
-		fmt.Print(".")
-		time.Sleep(400 * time.Millisecond)
+func (g *ConsoleGame) loadGame() {
+	if err := g.session.Reload(); err != nil {
+		fmt.Println("\033[1;33mAucune sauvegarde trouvée.\033[0m")
+		time.Sleep(2 * time.Second)
+		return
 	}
-	fmt.Println("\033[0m")
-	fmt.Println("\033[1;33mAucune sauvegarde trouvée.\033[0m")
-	time.Sleep(2 * time.Second)
 
-	ui.DisplayMainMenu()
-	waitForMenuInput()
+	fmt.Printf("\033[1;32mSauvegarde chargée. Bienvenue %s !\033[0m\n", g.session.Player.Player.Stats.Name)
+	g.gameLoop()
 }
 
-func showOptions() {
+func (g *ConsoleGame) showOptions() {
 	fmt.Println("\n\033[1;36m════════════ OPTIONS ════════════\033[0m")
 	fmt.Println("• 🔊 Volume: 80%")
 	fmt.Println("• ⚔️  Difficulté: Normal")
@@ -94,118 +110,130 @@ func showOptions() {
 	fmt.Println("\033[1;36m══════════════════════════════════\033[0m")
 
 	fmt.Print("\n\033[1;37mAppuyez sur Entrée pour retourner au menu...\033[0m")
-	reader := bufio.NewReader(os.Stdin)
-	reader.ReadString('\n')
-
-	ui.DisplayMainMenu()
-	waitForMenuInput()
+	g.reader.ReadString('\n')
 }
 
-func confirmQuit() {
-	fmt.Print("\033[1;31mConfirmez (OUI/NON): \033[0m")
+func (g *ConsoleGame) confirmQuit() {
+	for {
+		fmt.Print("\033[1;31mConfirmez (OUI/NON): \033[0m")
+		confirmation, err := g.reader.ReadString('\n')
+		if err != nil {
+			fmt.Println("\n\033[1;31m✗ Lecture impossible.\033[0m")
+			return
+		}
+		confirmation = strings.TrimSpace(strings.ToUpper(confirmation))
 
-	reader := bufio.NewReader(os.Stdin)
-	confirmation, _ := reader.ReadString('\n')
-	confirmation = strings.TrimSpace(strings.ToUpper(confirmation))
-
-	switch confirmation {
-	case "OUI", "O", "Y", "YES":
-		fmt.Println("\n\033[1;35m👋 À bientôt !\033[0m")
-		time.Sleep(1 * time.Second)
-		os.Exit(0)
-
-	case "NON", "N", "NO":
-		fmt.Println("\n\033[1;32m✓ Retour au menu principal.\033[0m")
-		time.Sleep(1 * time.Second)
-		ui.DisplayMainMenu()
-		waitForMenuInput()
-
-	default:
-		fmt.Println("\n\033[1;31m✗ Réponse non reconnue.\033[0m")
-		confirmQuit()
+		switch confirmation {
+		case "OUI", "O", "Y", "YES":
+			fmt.Println("\n\033[1;35m👋 À bientôt !\033[0m")
+			time.Sleep(1 * time.Second)
+			os.Exit(0)
+		case "NON", "N", "NO":
+			fmt.Println("\n\033[1;32m✓ Retour au menu principal.\033[0m")
+			time.Sleep(1 * time.Second)
+			return
+		default:
+			fmt.Println("\n\033[1;31m✗ Réponse non reconnue.\033[0m")
+		}
 	}
 }
 
-// ==================== INVENTAIRE HANDLER ====================
-
-func showInventory() {
-	player, err := game.LoadPlayer("data_players.json") // fichier JSON à la racine
-	if err != nil {
-		fmt.Println("\033[1;31m✗ Erreur chargement inventaire:", err, "\033[0m")
+func (g *ConsoleGame) showInventory(pause bool) {
+	if g.session.Player == nil {
+		fmt.Println("\033[1;31m✗ Aucune donnée joueur chargée.\033[0m")
 		return
 	}
 
-	game.DisplayInventory(player)
+	game.DisplayInventory(g.session.Player)
 
-	fmt.Print("\n\033[1;37mAppuyez sur Entrée pour revenir au jeu...\033[0m")
-	reader := bufio.NewReader(os.Stdin)
-	reader.ReadString('\n')
+	if pause {
+		fmt.Print("\n\033[1;37mAppuyez sur Entrée pour revenir...\033[0m")
+		g.reader.ReadString('\n')
+	}
 }
 
-func gameLoop() {
-	reader := bufio.NewReader(os.Stdin)
+func (g *ConsoleGame) chooseStage() (string, bool) {
+	stages := game.ListStages()
+	if len(stages) == 0 {
+		fmt.Println("\033[1;31mAucun stage disponible pour le moment.\033[0m")
+		return "", false
+	}
 
+	fmt.Println("\n\033[1;36m═══════════ STAGES DISPONIBLES ═══════════\033[0m")
+	for i, stage := range stages {
+		fmt.Printf("%d. Zone %d - %s (%s)\n", i+1, stage.Zone, stage.Name, stage.Timing)
+	}
+	fmt.Println("0. Retour")
+	fmt.Print("Votre choix : ")
+
+	input, _ := g.reader.ReadString('\n')
+	input = strings.TrimSpace(input)
+	if input == "" || input == "0" {
+		return "", false
+	}
+
+	idx, err := strconv.Atoi(input)
+	if err != nil || idx < 1 || idx > len(stages) {
+		fmt.Println("\033[1;31mChoix invalide.\033[0m")
+		return "", false
+	}
+
+	return stages[idx-1].Slug, true
+}
+
+func (g *ConsoleGame) gameLoop() {
 	for {
 		fmt.Println("\n\033[1;36m═══════════════════════════\033[0m")
 		fmt.Println("📜 Commandes disponibles :")
 		fmt.Println("• Q = Quitter vers le menu")
-		fmt.Println("• C = Continuer l'aventure")
-		fmt.Println("\033[1;36m═══════════════════════════\033[0m")
+		fmt.Println("• C = Choisir un stage")
 		fmt.Println("• I = Inventaire")
 		fmt.Println("• S = Faire du shopping")
-		fmt.Println("• F = Ameliorer l'équipement")
+		fmt.Println("• F = Améliorer l'équipement")
 		fmt.Println("\033[1;36m═══════════════════════════\033[0m")
 		fmt.Print("Votre choix : ")
 
-		input, _ := reader.ReadString('\n')
+		input, err := g.reader.ReadString('\n')
+		if err != nil {
+			fmt.Println("\033[1;31mErreur de lecture. Retour au menu.\033[0m")
+			return
+		}
 		choice := strings.TrimSpace(strings.ToUpper(input))
 
 		switch choice {
 		case "I":
-			showInventory() // ouvre l'inventaire JSON
+			g.showInventory(true)
 		case "Q":
 			fmt.Println("\033[1;31mRetour au menu principal...\033[0m")
+			if err := g.session.Save(); err != nil {
+				fmt.Println("\033[1;31mErreur de sauvegarde :\033[0m", err)
+			}
 			time.Sleep(1 * time.Second)
-			ui.DisplayMainMenu()
-			waitForMenuInput()
 			return
 		case "C":
-			fmt.Println("\033[1;32m⚔️ Vous avancez dans la caverne...\033[0m")
-			player, err := game.LoadPlayer("data_players.json")
-			if err != nil {
-				fmt.Println("Erreur:", err)
-				return
+			if stageSlug, ok := g.chooseStage(); ok {
+				if err := game.StartBattle(g.session, stageSlug, g.reader); err != nil {
+					fmt.Println("\033[1;31mErreur :\033[0m", err)
+				}
 			}
-			game.StartBattle(player, "cave", "data_players.json")
-
+		case "S":
+			fmt.Println("🛍️ Le marchand prépare encore son échoppe...")
+			time.Sleep(1 * time.Second)
 		case "F":
-			fmt.Println("🛠️ Vous allez voir le forgeron...")
-
-			// Appelle le script Python (forgeron_ui.py)
-			cmd := exec.Command("python3", "game/forgeron_ui.py")
-			output, err := cmd.CombinedOutput()
-			if err != nil {
-				fmt.Println("Erreur lors de l’ouverture du forgeron :", err)
-			} else {
-				fmt.Println("Résultat du forgeron :", string(output))
-			}
+			game.LaunchForge(g.session)
 		default:
 			fmt.Println("\033[1;31m✗ Commande inconnue.\033[0m")
 		}
 	}
 }
 
-// ==================== MAIN ====================
 func main() {
-	// Afficher l'animation de bienvenue
-	ui.AnimatedWelcome()
-	time.Sleep(1 * time.Second)
+	session, err := game.NewSession(saveFilePath)
+	if err != nil {
+		fmt.Println("\033[1;31mImpossible de lancer la session :\033[0m", err)
+		return
+	}
 
-	// Afficher l'écran de bienvenue fixe
-	ui.DisplayWelcomeArt()
-	time.Sleep(1 * time.Second)
-
-	// Afficher le menu principal et attendre l'input
-	ui.DisplayMainMenu()
-	waitForMenuInput()
+	consoleGame := NewConsoleGame(session)
+	consoleGame.Run()
 }

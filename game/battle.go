@@ -3,19 +3,20 @@ package game
 import (
 	"bufio"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"math/rand"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 )
 
-// ====== Combat d’une “vague” (1 ennemi) avec aide éventuelle du gobelin ======
+// fightWave gère un affrontement contre un ennemi unique.
 func fightWave(player *PlayerData, enemy Enemy) bool {
 	fmt.Println("⚔️  Un combat commence !")
 	fmt.Printf("➡️ Ennemi: %s (HP:%d ATK:%d)\n", enemy.Name, enemy.Health, enemy.Attack)
 
-	// Le gobelin aide-t-il ?
 	gob, hasGob := player.Player.Companions["gobelin"]
 	gobAtk := 0
 	if hasGob && gob.Unlocked && gob.Attack > 0 {
@@ -23,100 +24,99 @@ func fightWave(player *PlayerData, enemy Enemy) bool {
 		fmt.Printf("🟢 Le familier %s vous assiste (ATK +%d / tour)\n", gob.Name, gobAtk)
 	}
 
-	for enemy.Health > 0 && player.Player.Stats.Health > 0 {
-		// Joueur attaque
+	stats := &player.Player.Stats
+
+	for enemy.Health > 0 && stats.Health > 0 {
 		dmg := rand.Intn(5) + 3 // 3..7
 		enemy.Health -= dmg
-		fmt.Printf("%s frappe %s pour %d dégâts !\n", player.Player.Stats.Name, enemy.Name, dmg)
+		fmt.Printf("%s frappe %s pour %d dégâts !\n", stats.Name, enemy.Name, dmg)
 
-		// Gobelin attaque (s’il est débloqué)
 		if gobAtk > 0 && enemy.Health > 0 {
 			enemy.Health -= gobAtk
 			fmt.Printf("👺 %s frappe %s pour %d dégâts !\n", gob.Name, enemy.Name, gobAtk)
 		}
 
-		// Ennemi riposte
 		if enemy.Health > 0 {
-			player.Player.Stats.Health -= enemy.Attack
-			fmt.Printf("%s riposte pour %d dégâts !\n", enemy.Name, enemy.Attack)
+			stats.Health -= enemy.Attack
+			if stats.Health < 0 {
+				stats.Health = 0
+			}
+			fmt.Printf("%s riposte pour %d dégâts ! (PV restants: %d/%d)\n", enemy.Name, enemy.Attack, stats.Health, stats.MaxHealth)
 		}
 	}
 
-	if player.Player.Stats.Health <= 0 {
+	if stats.Health <= 0 {
 		fmt.Println("💀 Vous êtes mort...")
 		return false
 	}
 
 	fmt.Printf("✅ %s a été vaincu !\n", enemy.Name)
+	fmt.Printf("❤️ Santé actuelle : %d/%d\n", stats.Health, stats.MaxHealth)
 	return true
 }
 
-func savePlayer(filename string, player *PlayerData) error {
-	data, err := json.MarshalIndent(player, "", "  ")
-	if err != nil {
-		return err
+// StartBattle lance un stage complet et applique les récompenses.
+func StartBattle(session *Session, stageSlug string, reader *bufio.Reader) error {
+	if session == nil || session.Player == nil {
+		return errors.New("aucune session de jeu active")
 	}
-	return os.WriteFile(filename, data, 0644)
-}
+	if reader == nil {
+		reader = bufio.NewReader(os.Stdin)
+	}
 
-// ====== Lancement d’un stage (interactif + gobelin) ======
-func StartBattle(player *PlayerData, stageName string, filename string) {
-	stage, ok := Stages[stageName]
+	stage, ok := GetStage(stageSlug)
 	if !ok {
-		fmt.Println("⚠️ Stage inconnu :", stageName)
-		return
+		return fmt.Errorf("stage inconnu : %s", stageSlug)
 	}
 
-	fmt.Printf("\n🏰 Stage Zone %d (%s)\n", stage.Zone, stage.Timing)
-	if len(stage.Enemies) == 0 {
+	player := session.Player
+	stats := &player.Player.Stats
+	if stats.Health <= 0 {
+		stats.Health = stats.MaxHealth
+	}
+
+	fmt.Printf("\n🏰 Stage Zone %d (%s) - %s\n", stage.Zone, stage.Timing, stage.Name)
+	if len(stage.Enemies) == 0 && stage.Boss == nil {
 		fmt.Println("Pas d’ennemis ici. Exploration libre.")
-		return
+		return nil
 	}
-
-	reader := bufio.NewReader(os.Stdin)
 
 	firstVictory := false
 
-	for i, e := range stage.Enemies {
-		fmt.Printf("\n⚔️  Combat contre %s !\n", e.Name)
-		if !fightWave(player, e) {
+	for idx, enemy := range stage.Enemies {
+		fmt.Printf("\n⚔️  Combat contre %s !\n", enemy.Name)
+		if !fightWave(player, enemy) {
 			fmt.Println("\n💀 Vous avez échoué au stage...")
-			return
+			_ = session.Save()
+			return nil
 		}
 
-		// -------- Déblocage du gobelin après la 1ère victoire en "cave" --------
-		if !firstVictory && (stageName == "cave" || stageName == "caverne") {
-			// Débloque le gobelin
-			player.Player.Companions["gobelin"] = Companion{
-				Name:     "Gobelin",
-				Attack:   2, // dégâts par tour
-				Unlocked: true,
+		if !firstVictory {
+			if stage.Slug == "cave" && session.UnlockCompanion("gobelin", Companion{
+				Name:   "Gobelin",
+				Attack: 2,
+			}) {
+				fmt.Println("✨ Un gobelin reconnaissant vous rejoint ! (ATK +2 / tour)")
 			}
 			firstVictory = true
-			fmt.Println("✨ Un gobelin reconnaissant vous rejoint ! (ATK +2 / tour)")
 		}
-		// ----------------------------------------------------------------------
 
-		// Loots de ce combat
-		drops := GenerateDrops(stageName)
+		drops := GenerateDrops(stage.Slug)
 		if len(drops) > 0 {
 			fmt.Print("🎁 Vous obtenez : ")
 			for _, d := range drops {
 				fmt.Printf("%dx %s ", d.Quantity, d.Item)
-				if player.Player.Inventory.Drops == nil {
-					player.Player.Inventory.Drops = make(map[string]int)
-				}
-				player.Player.Inventory.Drops[d.Item] += d.Quantity
 			}
 			fmt.Println()
+			session.AddDrops(drops)
 		}
-		// Gain d’or séparé
-		goldGain := rand.Intn(16) + 5 // 5–20
-		player.Player.Inventory.Gold += goldGain
-		fmt.Printf("💰 Vous trouvez %d or ! (total: %d)\n", goldGain, player.Player.Inventory.Gold+player.Player.Stats.Gold)
 
-		// Si ce n’était pas le dernier ennemi → proposer une action au joueur
-		if i < len(stage.Enemies)-1 {
+		goldGain := rand.Intn(16) + 5 // 5–20
+		session.AddGold(goldGain)
+		fmt.Printf("💰 Vous trouvez %d or ! (total: %d)\n", goldGain, session.CurrentGold())
+
+		if idx < len(stage.Enemies)-1 {
+		actionLoop:
 			for {
 				fmt.Print("\n➤ Action (C=Continuer / I=Inventaire / F=Forge / Q=Quitter) : ")
 				choice, _ := reader.ReadString('\n')
@@ -124,61 +124,84 @@ func StartBattle(player *PlayerData, stageName string, filename string) {
 
 				switch choice {
 				case "C":
-					goto NEXT_ENEMY
+					break actionLoop
 				case "I":
 					DisplayInventory(player)
-					// on reboucle pour reproposer l’action
 				case "Q":
 					fmt.Println("🚪 Vous quittez le stage et retournez au menu.")
-					_ = savePlayer(filename, player)
-					return
+					_ = session.Save()
+					return nil
 				case "F":
-					fmt.Println("🛠️ Vous allez voir le forgeron...")
-
-					// Appel du script Python
-					cmd := exec.Command("python3", "forgeron_ui.py")
-					output, err := cmd.CombinedOutput()
-
-					if err != nil {
-						fmt.Println("❌ Erreur lors de l’ouverture du forgeron :", err)
-					} else {
-						fmt.Println("📦 Données reçues du forgeron :", string(output))
-
-						// Exemple de structure JSON attendue : {"action":"buy_spellbook","success":true,"remaining_gold":70}
-						var result map[string]interface{}
-						if err := json.Unmarshal(output, &result); err != nil {
-							fmt.Println("❌ Erreur parsing JSON :", err)
-						} else {
-							// Mise à jour de l’or du joueur
-							if gold, ok := result["remaining_gold"].(float64); ok {
-								player.Player.Stats.Gold = int(gold) // <= au lieu de player.Gold
-								fmt.Println("💰 Or du joueur mis à jour :", player.Player.Stats.Gold)
-							}
-							// Ajout d’un sort
-							if spell, ok := result["spell"].(string); ok {
-								player.Player.Stats.Spells = append(player.Player.Stats.Spells, spell) // <= dans Stats
-								fmt.Println("✨ Nouveau sort appris :", spell)
-							}
-						}
-					}
-
+					LaunchForge(session)
 				default:
-					fmt.Println("❓ Saisie invalide. Tape C, I ou Q.")
+					fmt.Println("❓ Saisie invalide. Tape C, I, F ou Q.")
 				}
 			}
 		}
-	NEXT_ENEMY:
 	}
 
-	// // Or en fin de stage
-	// rand.Seed(time.Now().UnixNano())
-	// goldGain := rand.Intn(21) + 10 // 10–30
-	// player.Player.Inventory.Gold += goldGain
-	// fmt.Printf("💰 Vous gagnez %d or (total affiché: %d)\n",
-	// 	goldGain, player.Player.Stats.Gold+player.Player.Inventory.Gold)
+	if stage.Boss != nil {
+		boss := *stage.Boss
+		fmt.Printf("\n👑 Boss final : %s (HP:%d ATK:%d)\n", boss.Name, boss.Health, boss.Attack)
+		if !fightWave(player, boss) {
+			fmt.Println("\n💀 Vous avez échoué contre le boss...")
+			_ = session.Save()
+			return nil
+		}
+	}
 
-	// if err := savePlayer(filename, player); err != nil {
-	// 	fmt.Println("❌ Erreur sauvegarde :", err)
-	// }
-	// fmt.Println("✅ Stage terminé :", stage.Name)
+	if err := session.Save(); err != nil {
+		fmt.Println("❌ Erreur sauvegarde :", err)
+	} else {
+		fmt.Println("💾 Progression sauvegardée.")
+	}
+	fmt.Printf("✅ Stage terminé : %s\n", stage.Name)
+	return nil
+}
+
+// LaunchForge exécute l'interface Python du forgeron et applique le résultat.
+func LaunchForge(session *Session) {
+	fmt.Println("🛠️ Vous allez voir le forgeron...")
+	cmd := exec.Command("python3", filepath.Join("game", "forgeron_ui.py"))
+	output, err := cmd.CombinedOutput()
+	if err != nil {
+		fmt.Println("❌ Erreur lors de l’ouverture du forgeron :", err)
+		if len(output) > 0 {
+			fmt.Println(string(output))
+		}
+		return
+	}
+
+	fmt.Println("📦 Données reçues du forgeron :", string(output))
+
+	var result map[string]interface{}
+	if err := json.Unmarshal(output, &result); err != nil {
+		fmt.Println("❌ Erreur parsing JSON :", err)
+		return
+	}
+
+	if session != nil && session.Player != nil {
+		if gold, ok := result["remaining_gold"].(float64); ok {
+			session.Player.Player.Stats.Gold = int(gold)
+			fmt.Println("💰 Or du joueur mis à jour :", session.Player.Player.Stats.Gold)
+		}
+		if spell, ok := result["spell"].(string); ok && spell != "" {
+			session.Player.Player.Stats.Spells = append(session.Player.Player.Stats.Spells, spell)
+			fmt.Println("✨ Nouveau sort appris :", spell)
+		}
+		if err := session.Save(); err != nil {
+			fmt.Println("❌ Impossible de sauvegarder après la forge :", err)
+		}
+	}
+}
+
+// Deprecated: utilisé par d'anciens appels, conservé pour compatibilité.
+func StartBattleLegacy(player *PlayerData, stageName string, filename string) {
+	session, err := NewSession(filename)
+	if err != nil {
+		fmt.Println("⚠️ Stage legacy indisponible :", err)
+		return
+	}
+	session.Player = player
+	_ = StartBattle(session, stageName, nil)
 }
